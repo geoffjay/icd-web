@@ -1,0 +1,11 @@
+.table-bordered
+  border 1px solid rgba(128, 128, 128, .5)
+
+  & > thead > tr > th,
+  & > thead > tr > td,
+  & > tbody > tr > th,
+  & > tbody > tr > td
+    border 1px solid rgba(128, 128, 128, .5)
+
+.table-striped tbody tr:nth-of-type(odd)
+  background-color rgba(0, 0, 0, .1)
