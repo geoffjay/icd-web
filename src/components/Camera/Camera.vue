@@ -2,24 +2,26 @@
 b-container#camera
   b-row
     h2 Cameras
-  b-row(v-if="items.length === 0")
-    p No cameras were found
-  b-row(v-else)
-    b-table(striped hover :items="items")
+  b-card.camera-list
+    b-row
+      b-table(striped hover show-empty bordered :items="items")
 </template>
 
 <script>
+import * as c from '@/config'
+
 export default {
   name: 'Camera',
   data () {
     return {
+      host: 'http://' + window.location.hostname + ':' + c.connection.port,
       items: []
     }
   },
   methods: {
     getItems: function () {
       this.getCount()
-      var path = 'http://10.0.2.2:3003/api/cameras'
+      var path = this.host + '/api/cameras'
       this.$http.get(path).then(response => {
         this.items = response.data
       }, response => {
@@ -27,7 +29,7 @@ export default {
       })
     },
     getCount: function () {
-      this.$http.get('http://10.0.2.2:3003/api/count/cameras').then(response => {
+      this.$http.get(this.host + '/api/count/cameras').then(response => {
         this.total = response.data.count
       }, response => {
         // error callback
@@ -36,6 +38,11 @@ export default {
   },
   mounted: function () {
     this.getItems()
+    /*
+    setInterval(function () {
+      this.getItems()
+    }.bind(this), 10000)
+    */
   }
 }
 </script>
@@ -46,4 +53,7 @@ export default {
 #camera
   h2
     padding-bottom 20px
+
+.camera-list
+  padding 0 15px
 </style>

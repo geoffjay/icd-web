@@ -1,57 +1,62 @@
 <template lang="pug">
 #image
   b-container(v-if="$route.params.id")
+    h2 Image {{ $route.params.id }}
     b-img(ref="img" fluid :onload="loadImage($route.params.id, true)")
   b-container(v-else)
     b-row
       h2 Images
-    b-row
-      b-col(cols="4" offset-md="6")
-        b-form-group.float-right(horizontal label="Filter" :label-cols="3")
-          b-form-input(v-model="filter" placeholder="Type to search")
-      b-col(cols="2")
-        b-button-group.float-right
-          b-button(variant="primary" @click="downloadImages")
-            icon(name="download")
-          b-button(variant="danger" @click="deleteImages")
-            icon(name="trash")
-        b-form-checkbox-group(buttons)
-          b-form-checkbox(v-model="allSelected"
-                          :indeterminate="indeterminate"
-                          aria-describedby="itemIds"
-                          aria-controls="itemIds"
-                          @change="toggleAll")
-            icon(name="check")
-    b-row
-      b-table(striped hover show-empty bordered
-              :items="items"
-              :fields="fields"
-              :current-page="currentPage"
-              :per-page="perPage"
-              :filter="filter"
-              @filtered="onFiltered")
-        template(slot="detail" slot-scope="row")
-          b-form-checkbox(v-model="row.item._showDetails" @change="loadImage(row.item.id, $event)" plain)
-        template(slot="select" slot-scope="row")
-          b-form-checkbox(v-model="selected" :value="row.item.id" plain)
-        template(slot="name" slot-scope="row")
-          a(:href="`/image/${row.item.id}`") {{ row.item.name }}
-        template(slot="row-details" slot-scope="row")
-          b-card
-            b-img(ref="img" fluid)
-    b-row
-      b-col(cols="4")
-        b-form-group(horizontal label="Rows per page" :label-cols="6")
-          b-form-select(:options="pageOptions" v-model="perPage")
-      b-col(cols="8")
-        b-pagination.float-right(:total-rows="totalRows" :per-page="perPage" v-model="currentPage")
+    b-card.image-list
+      b-row
+        b-col(cols="4" offset-md="6")
+          b-form-group.float-right(horizontal label="Filter" :label-cols="3")
+            b-form-input(v-model="filter" placeholder="Type to search")
+        b-col(cols="2")
+          b-button-group.float-right
+            b-button(variant="primary" @click="downloadImages")
+              icon(name="download")
+            b-button(variant="danger" @click="deleteImages")
+              icon(name="trash")
+          b-form-checkbox-group(buttons)
+            b-form-checkbox(v-model="allSelected"
+                            :indeterminate="indeterminate"
+                            aria-describedby="itemIds"
+                            aria-controls="itemIds"
+                            @change="toggleAll")
+              icon(name="check")
+      b-row
+        b-table(striped hover show-empty bordered
+                :items="items"
+                :fields="fields"
+                :current-page="currentPage"
+                :per-page="perPage"
+                :filter="filter"
+                @filtered="onFiltered")
+          template(slot="detail" slot-scope="row")
+            b-form-checkbox(v-model="row.item._showDetails" @change="loadImage(row.item.id, $event)" plain)
+          template(slot="select" slot-scope="row")
+            b-form-checkbox(v-model="selected" :value="row.item.id" plain)
+          template(slot="name" slot-scope="row")
+            a(:href="`/image/${row.item.id}`") {{ row.item.name }}
+          template(slot="row-details" slot-scope="row")
+            b-card
+              b-img(ref="img" fluid)
+      b-row
+        b-col(cols="4")
+          b-form-group(horizontal label="Rows per page" :label-cols="6")
+            b-form-select(:options="pageOptions" v-model="perPage")
+        b-col(cols="8")
+          b-pagination.float-right(:total-rows="totalRows" :per-page="perPage" v-model="currentPage")
 </template>
 
 <script>
+import * as c from '@/config'
+
 export default {
   name: 'Image',
   data () {
     return {
+      host: 'http://' + window.location.hostname + ':' + c.connection.port,
       items: [],
       itemIds: [],
       selected: [],
@@ -91,7 +96,7 @@ export default {
   methods: {
     getItems: function () {
       this.getCount()
-      var path = 'http://10.0.2.2:3003/api/images/'
+      var path = this.host + '/api/images/'
       this.$http.get(path).then(response => {
         this.items = response.data
         for (var i = 0; i < this.items.length; i++) {
@@ -102,7 +107,7 @@ export default {
       })
     },
     getCount: function () {
-      this.$http.get('http://10.0.2.2:3003/api/count/images').then(response => {
+      this.$http.get(this.host + '/api/count/images').then(response => {
         this.totalRows = response.data.count
       }, response => {
         // TODO add error callback
@@ -114,7 +119,7 @@ export default {
     },
     loadImage: function (id, event) {
       if (event) {
-        var path = 'http://10.0.2.2:3003/api/images/' + id + '/all'
+        var path = this.host + '/api/images/' + id + '/all'
         this.$http.get(path).then(response => {
           var src = 'data:image/png;base64,' + response.data.data
           this.$refs.img.src = src
@@ -125,7 +130,7 @@ export default {
     },
     downloadImages: function () {
       var that = this
-      var base = 'http://10.0.2.2:3003/api/images/'
+      var base = this.host + '/api/images/'
 
       this.selected.forEach(function (id) {
         var path = base + id + '/all'
@@ -157,7 +162,7 @@ export default {
       this.selected = []
     },
     deleteImage: function (id) {
-      var path = 'http://10.0.2.2:3003/api/images/' + id
+      var path = this.host + '/api/images/' + id
       this.$http.delete(path).then(response => {
         var idx = this.itemIds.indexOf(id)
         delete this.items[idx]    // XXX is this necessary?
@@ -190,6 +195,9 @@ export default {
   },
   mounted: function () {
     this.getItems()
+    setInterval(function () {
+      this.getItems()
+    }.bind(this), 30000)
   },
   watch: {
     selected (newVal, oldVal) {
@@ -234,4 +242,7 @@ export default {
 
   label input[type="checkbox"]
     float left
+
+.image-list
+  padding 0 15px
 </style>
